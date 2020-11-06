@@ -76,8 +76,19 @@ export class DefaultOAuthInterceptor implements HttpInterceptor {
       mergeMap(token => {
         if (token) {
           const header = 'Bearer ' + token;
-          const headers = req.headers.set('Authorization', header);
-          req = req.clone({ headers });
+
+          let authorization = 'Authorization';
+          let authHeaders = req.headers.getAll(authorization);
+
+          if (authHeaders == null) {
+            let headers = req.headers.set(authorization, header);
+            req = req.clone({ headers });
+          } else {
+            let otherAuthHeaders = authHeaders.filter(u => !u.startsWith('Bearer'));
+            req.headers.set(authorization, otherAuthHeaders);
+            let headers = req.headers.append(authorization, header);
+            req = req.clone({ headers });
+          }
         }
 
         return next
